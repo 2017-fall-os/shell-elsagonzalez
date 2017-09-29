@@ -16,6 +16,7 @@ int main(int argc, char *argv[], char *envp[]){
     printf("%c", '$');
     char * j = fgets(answer, 100, stdin);
     if(answer && *answer){
+      isExiting = 1;
       int i;
       for(i = 0; i < 4; i++){
 	if(answer[i] != exitStr[i]){
@@ -29,11 +30,12 @@ int main(int argc, char *argv[], char *envp[]){
 	if(includesPath(tokens[0]) == 0){
 	  //look for the path in $PATH
 	  char ** paths = mytoc(getenv("PATH"), ':');
-	  int i;
 	  for(i = 0; paths[i] && paths[i] != '\0'; i++){
 	    char * file = concat(paths[i], tokens[0]);
+	    printf("path is %s, and file is %s\n", paths[i], file);
 	    struct stat temp;
 	    if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
+	      printf("Path was found\n");
 	      tokens[0] = file;
 	      pathFound = 1;
 	      break;
@@ -44,6 +46,7 @@ int main(int argc, char *argv[], char *envp[]){
 	  pathFound = 1;
 	}
 	if(pathFound){
+	  printf("I will fork\n");
           int rc = fork();
 	  if(rc < 0){
 	    printf("Fork failed");
@@ -102,12 +105,14 @@ char * concat(char * path, char * token){
   for(i = 0; token[i] && token[i] != '\n' && token[i] != '\0'; i++){
     charCount++;
   }
-  char * str = (char *)malloc(sizeof(char)*(charCount+1));
+  char * str = (char *)malloc(sizeof(char)*(charCount+2)); //+1 for '/' and +1 for terminator
   charCount = 0;
   for(i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
     str[i] = path[i];
     charCount++;
   }
+  str[i] = '/';
+  charCount++;
   for(i = 0; token[i] && token[i] != '\n' && token[i] != '\0'; i++){
     str[i+charCount] = token[i]; 
   }

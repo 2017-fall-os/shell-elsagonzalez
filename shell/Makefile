@@ -15,7 +15,7 @@ shell.o: shell.c mytoc.h shell.h
 	cc -c $(CFLAGS) shell.c
 
 clean: 
-	rm -f *.o test
+	rm -f *.o shell
 
 demo: shell
 	(echo first; echo "second line"; echo "third and last") | ./shell

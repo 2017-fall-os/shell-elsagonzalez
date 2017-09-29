@@ -39,7 +39,6 @@ char** mytoc(char *str, char delim){
       tokens[currToken] = subset(str, i-wordSize, i); 
     }
   }
-  printf("number of tokens: %d\n", count);
   return tokens;
 }
 
