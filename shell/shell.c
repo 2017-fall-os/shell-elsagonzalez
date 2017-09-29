@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "mytoc.h"
+#include "shell.h"
 
 int main(int argc, char *argv[], char *envp[]){
   char ** tokens;
@@ -21,18 +24,19 @@ int main(int argc, char *argv[], char *envp[]){
 	}
       }
       if(isExiting == 0){
-	char pathfound = 0;
+	char pathFound = 0;
 	tokens = mytoc(answer, ' ');
-	printTokens(tokens);
 	if(includesPath(tokens[0]) == 0){
 	  //look for the path in $PATH
-	  char ** paths = mytoc($PATH, ':');
+	  char ** paths = mytoc(getenv("PATH"), ':');
 	  int i;
-	  for(i = 0; paths[i] && paths[i] != '\n' && paths[i] != '\0'; i++){
-	    if(isSameFunction(paths[i], tokens[0]){
-		tokens[0] = paths[i];
-		pathFound = 1;
-		break;
+	  for(i = 0; paths[i] && paths[i] != '\0'; i++){
+	    char * file = concat(paths[i], tokens[0]);
+	    struct stat temp;
+	    if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
+	      tokens[0] = file;
+	      pathFound = 1;
+	      break;
 	    }
 	  }
 	}
@@ -57,34 +61,56 @@ int main(int argc, char *argv[], char *envp[]){
   } while(isExiting == 0);
 }
 
-  char includesPath(char * token){
-    if(token[0] == '/'){
-      return 1;
-    }
-    else{
-      return 0;
-    }
+char includesPath(char * token){
+  if(token[0] == '/'){
+    return 1;
   }
+  else{
+    return 0;
+  }
+}
 
-  char isSameFunction(char * path, char * token){
-    char startIndex = -1;
-    int i;
-    for(i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
-      if(path[i] == '/'){
-	startIndex = i+1;
-      }
+char isSameFunction(char * path, char * token){
+  char startIndex = -1;
+  int i;
+  for(i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+    if(path[i] == '/'){
+      startIndex = i+1;
     }
-    char isSameFunction = 1;
-    if(startIndex == -1){
-      isSameFunction = 0;
-    }
-    else{
-      for(i = startIndex; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
-	if(path[i] != token[i]){
-	  isSameFunction = 0;
-	  break;
-	}
-      }
-    }
-    return isSameFunction;
   }
+  char isSameFunction = 1;
+  if(startIndex == -1){
+    isSameFunction = 0;
+  }
+  else{
+    for(i = startIndex; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+      if(path[i] != token[i]){
+	isSameFunction = 0;
+	break;
+      }
+    }
+  }
+  return isSameFunction;
+}
+
+char * concat(char * path, char * token){
+  int i;
+  int charCount = 0;
+  for(i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+    charCount++;
+  }
+  for(i = 0; token[i] && token[i] != '\n' && token[i] != '\0'; i++){
+    charCount++;
+  }
+  char * str = (char *)malloc(sizeof(char)*(charCount+1));
+  charCount = 0;
+  for(i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+    str[i] = path[i];
+    charCount++;
+  }
+  for(i = 0; token[i] && token[i] != '\n' && token[i] != '\0'; i++){
+    str[i+charCount] = token[i]; 
+  }
+  str[i+charCount] = '\0';
+  return str;
+}

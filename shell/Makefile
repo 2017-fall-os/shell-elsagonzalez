@@ -11,7 +11,7 @@ shell: mytoc.o shell.o
 mytoc.o: mytoc.c mytoc.h
 	cc -c $(CFLAGS) mytoc.c
 
-shell.o: shell.c mytoc.h
+shell.o: shell.c mytoc.h shell.h
 	cc -c $(CFLAGS) shell.c
 
 clean: 
