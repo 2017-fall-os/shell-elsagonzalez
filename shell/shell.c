@@ -52,7 +52,7 @@ int main(int argc, char *argv[], char *envp[]){
 	    printf("Fork failed");
           }
           else if(rc == 0){
-	    int returnVal = execve(tokens[0], &tokens[1], envp); 
+	    int returnVal = execve(tokens[0], tokens, envp); 
           }
           else{
             int wc = wait(NULL);
