@@ -30,9 +30,9 @@ int main(int argc, char *argv[], char *envp[]){
 	  int i;
 	  for(i = 0; paths[i] && paths[i] != '\n' && paths[i] != '\0'; i++){
 	    if(isSameFunction(paths[i], tokens[0]){
-	      tokens[0] = paths[i];
-	      pathFound = 1;
-	      break;
+		tokens[0] = paths[i];
+		pathFound = 1;
+		break;
 	    }
 	  }
 	}
@@ -41,21 +41,21 @@ int main(int argc, char *argv[], char *envp[]){
 	}
 	if(pathFound){
           int rc = fork();
-          if(rc < 0){
-            printf("Fork failed");
+	  if(rc < 0){
+	    printf("Fork failed");
           }
           else if(rc == 0){
 	    int returnVal = execve(tokens[0], &tokens[1], envp); 
-	  }
-	  else{
+          }
+          else{
             int wc = wait(NULL);
           }
-          deleteTokens(tokens);
-        }
-	}
-      }
-    } while(isExiting == 0);
-  }
+        } //end if path found
+        deleteTokens(tokens);
+      } //end if exiting
+    } //end if answer
+  } while(isExiting == 0);
+}
 
   char includesPath(char * token){
     if(token[0] == '/'){
