@@ -12,6 +12,7 @@ int main(int argc, char *argv[], char *envp[]){
   do{
     printf("%c", '$');
     char * j = fgets(answer, 100, stdin);
+    char pathFound = 0;
     if(answer && *answer){
       int i;
       for(i = 0; i < 4; i++){
@@ -23,18 +24,59 @@ int main(int argc, char *argv[], char *envp[]){
       if(isExiting == 0){
 	tokens = mytoc(answer, ' ');
 	printTokens(tokens);
-	int rc = fork();
-	if(rc < 0){
-	  printf("Fork failed");
+	if(includesPath(tokens[0]) == 0){
+	  //look for the path in $PATH
+	  char ** paths = mytoc($PATH, ':');
+	  for(int i = 0; paths[i] && path[i] != '\n' && path[i] != '\0'; i++){
+	    if(isSameFunction(paths[i], tokens[0]){
+		tokens[0] = paths[i];
+		pathFound = 1;
+		break;
+	    }
+	  }
 	}
-	else if(rc == 0){
-	  int returnVal = execve(tokens[0], &tokens[1], envp); 
+	else {
+          pathFound = 1;
+        }
+	if(pathFound){
+	  int rc = fork();
+	  if(rc < 0){
+	    printf("Fork failed");
+	  }
+	  else if(rc == 0){
+	    int returnVal = execve(tokens[0], &tokens[1], envp); 
+	  }
+	  else{
+	    int wc = wait(NULL);
+	  }
+	  deleteTokens(tokens);
 	}
-	else{
-	  int wc = wait(NULL);
-	}
-	deleteTokens(tokens);
       }
-    }
-  } while(isExiting == 0);
+   } while(isExiting == 0);
 }
+
+char includesPath(char * token){
+  if(token[0] == '/'){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
+ char isSameFunction(char * path, char * token){
+   char startIndex;
+   for(int i = 0; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+     if(path[i] == '/'){
+       startIndex = i+1;
+     }
+   }
+   char isSameFunction = 1;
+   for(int i = startIndex; path[i] && path[i] != '\n' && path[i] != '\0'; i++){
+     if(path[i] != token[i]){
+       isSameFunction = 0;
+       break;
+     }
+   }
+   return isSameFunction;
+ }
