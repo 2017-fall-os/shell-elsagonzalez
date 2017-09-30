@@ -9,56 +9,106 @@
 
 int main(int argc, char *argv[], char *envp[]){
   char ** tokens;
-  char * exitStr = "exit";
+  char * exitStr = "exit\n";
+  char * cdStr = "cd ";
   char * answer = (char *)malloc(100*sizeof(char));
   char isExiting = 1;
   do{
     printf("%c", '$');
-    char * j = fgets(answer, 100, stdin);
+    char * j = fgets(answer, 512, stdin);
     if(answer && *answer){
+      //check if it is exit
       isExiting = 1;
       int i;
-      for(i = 0; i < 4; i++){
+      for(i = 0; i < 5; i++){
 	if(answer[i] != exitStr[i]){
 	  isExiting = 0;
 	  break;
 	}
       }
       if(isExiting == 0){
-	char pathFound = 0;
-	tokens = mytoc(answer, ' ');
-	if(includesPath(tokens[0]) == 0){
-	  //look for the path in $PATH
-	  char ** paths = mytoc(getenv("PATH"), ':');
-	  for(i = 0; paths[i] && paths[i] != '\0'; i++){
-	    char * file = concat(paths[i], tokens[0]);
-	    printf("path is %s, and file is %s\n", paths[i], file);
-	    struct stat temp;
-	    if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
-	      printf("Path was found\n");
-	      tokens[0] = file;
-	      pathFound = 1;
+	//check if it is cd
+	char isCd = 1;
+	for(i = 0; i < 3; i++){
+	  if(answer[i] != cdStr[i]){
+	    isCd = 0;
+	    break;
+	  }
+	}
+	if(isCd){
+	  char * path;
+	  //check if it is ..
+	  char backStr = "..\n";
+	  char isGoingBack = 1;
+	  for(i = 0; i < 3; i++){
+	    if(backStr[i] != answer[i+3]){
+	      isGoingBack = 0;
 	      break;
 	    }
 	  }
+	  if(isGoingBack){
+	    char currPath[512];
+	    getcwd(currPath, 512);
+	    char lastSlash = 0;
+	    for(i = 0; currPath[i] && currPath[i] != '\n' && currPath[i] != '\0'; i++){
+	      if(currPath[i] == '/'){
+		lastSlash = i;
+	      }
+	    }
+	    path = subset(0, lastSlash);
+	  }
+	  else{
+	  for(i; answer[i] && answer[i] != '\n' && answer[i] != '\0'; i++){
+	    //count length
+	  }
+	  path = subset(answer, 3, i);
+	  if(includesPath(path) == 0){
+	    char currPath[512];
+	    getcwd(currPath, 512);
+	    path = concat(currPath, path);
+	  }
+	  }
+	  chdir(path);
 	}
-	else {
-	  pathFound = 1;
-	}
-	if(pathFound){
-	  printf("I will fork\n");
-          int rc = fork();
-	  if(rc < 0){
-	    printf("Fork failed");
-          }
-          else if(rc == 0){
-	    int returnVal = execve(tokens[0], tokens, envp); 
-          }
-          else{
-            int wc = wait(NULL);
-          }
-        } //end if path found
-        deleteTokens(tokens);
+	else { //not cd
+	  char pathFound = 0;
+	  tokens = mytoc(answer, ' ');
+	  if(includesPath(tokens[0]) == 0){
+	    //look for the path in $PATH
+	    char ** paths = mytoc(getenv("PATH"), ':');
+	    for(i = 0; paths[i] && paths[i] != '\0'; i++){
+	      char * file = concat(paths[i], tokens[0]);
+	      printf("path is %s, and file is %s\n", paths[i], file);
+	      struct stat temp;
+	      if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
+		printf("Path was found\n");
+		tokens[0] = file;
+		pathFound = 1;
+		break;
+	      }
+	    }
+	  }
+	  else {
+	    pathFound = 1;
+	  }
+	  if(pathFound){
+	    printf("I will fork\n");
+	    int rc = fork();
+	    if(rc < 0){
+	      printf("Fork failed");
+	    }
+	    else if(rc == 0){
+	      int returnVal = execve(tokens[0], tokens, envp); 
+	    }
+	    else {
+	      int wc = wait(NULL);
+	    }
+	  } //end if path found
+	  else {
+	    printf("Command not found\n");
+	  }
+	  deleteTokens(tokens);
+	}//end if cd
       } //end if exiting
     } //end if answer
   } while(isExiting == 0);
