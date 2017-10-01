@@ -37,27 +37,6 @@ int main(int argc, char *argv[], char *envp[]){
 	}
 	if(isCd){
 	  char * path;
-	  //check if it is ..
-	  char * backStr = "..\n";
-	  char isGoingBack = 1;
-	  for(i = 0; i < 3; i++){
-	    if(backStr[i] != answer[i+3]){
-	      isGoingBack = 0;
-	      break;
-	    }
-	  }
-	  if(isGoingBack){
-	    char currPath[512];
-	    char * cwd = getcwd(currPath, 512);
-	    char lastSlash = 0;
-	    for(i = 0; currPath[i] && currPath[i] != '\n' && currPath[i] != '\0'; i++){
-	      if(currPath[i] == '/'){
-		lastSlash = i;
-	      }
-	    }
-	    path = subset(path, 0, lastSlash);
-	  }
-	  else{
 	  for(i; answer[i] && answer[i] != '\n' && answer[i] != '\0'; i++){
 	    //count length
 	  }
@@ -66,7 +45,6 @@ int main(int argc, char *argv[], char *envp[]){
 	    char currPath[512];
 	    char * cwd = getcwd(currPath, 512);
 	    path = concat(currPath, path);
-	  }
 	  }
 	  int result = chdir(path);
 	}
