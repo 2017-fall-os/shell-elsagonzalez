@@ -14,7 +14,7 @@ int main(int argc, char *argv[], char *envp[]){
   char * answer = (char *)malloc(100*sizeof(char));
   char isExiting = 1;
   do{
-    printf("%c", '$');
+    //printf("%c", '$');
     char * j = fgets(answer, 512, stdin);
     if(answer && *answer){
       //check if it is exit
@@ -49,42 +49,57 @@ int main(int argc, char *argv[], char *envp[]){
 	  int result = chdir(path);
 	}
 	else { //not cd
-	  char pathFound = 0;
-	  tokens = mytoc(answer, ' ');
-	  if(includesPath(tokens[0]) == 0){
-	    //look for the path in $PATH
-	    char ** paths = mytoc(getenv("PATH"), ':');
-	    for(i = 0; paths[i] && paths[i] != '\0'; i++){
-	      char * file = concat(paths[i], tokens[0]);
-	      printf("path is %s, and file is %s\n", paths[i], file);
-	      struct stat temp;
-	      if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
-		printf("Path was found\n");
-		tokens[0] = file;
-		pathFound = 1;
-		break;
+	  tokens = mytoc(answer, '|');
+	  for(i = 0; tokens[i] && tokens[i] != '\0'; i++){
+	    //count
+	  }
+	  for(i; i != 0; i--){
+	    if(i > 1){
+	      //pipe
+	      
+	    }
+	    char pathFound = 0;
+	    char ** command = mytoc(tokens[i-1], ' ');
+	    if(includesPath(command[0]) == 0){
+	      //look for the path in $PATH
+	      char ** paths = mytoc(getenv("PATH"), ':');
+	      int k;
+	      for(k = 0; paths[k] && paths[k] != '\0'; k++){
+		char * file = concat(paths[k], command[0]);
+		printf("path is %s, and file is %s\n", paths[k], file);
+		struct stat temp;
+		if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
+		  printf("Path was found\n");
+		  command[0] = file;
+		  pathFound = 1;
+		  break;
+		}
 	      }
 	    }
-	  }
-	  else {
-	    pathFound = 1;
-	  }
-	  if(pathFound){
-	    printf("I will fork\n");
-	    int rc = fork();
-	    if(rc < 0){
-	      printf("Fork failed");
+	    else {
+	      pathFound = 1;
 	    }
-	    else if(rc == 0){
-	      int returnVal = execve(tokens[0], tokens, envp); 
+	    if(pathFound){
+	      printf("I will fork\n");
+	      int rc = fork();
+	      if(rc < 0){
+		printf("Fork failed");
+	      }
+	      else if(rc == 0){
+		int returnVal = execve(command[0], command, envp); 
+	      }
+	      else {
+		int wc = wait(NULL);
+	      }
 	    }
 	    else {
-	      int wc = wait(NULL);
+	      printf("Command not found\n");
+	    }//end if path found
+	    if(i > 1){
+	      //return input and output to their original state
+	      
 	    }
-	  } //end if path found
-	  else {
-	    printf("Command not found\n");
-	  }
+	  }//end for loop
 	  deleteTokens(tokens);
 	}//end if cd
       } //end if exiting
