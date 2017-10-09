@@ -20,8 +20,8 @@ char** mytoc(char *str, char delim){
     }
     //in case there was a word at the end with no delimeter after it
     count = (wordSize > 0)? count+1: count;
-    tokens = (char **)calloc(count, sizeof(char *));
-    
+    tokens = (char **)malloc((count+1)*sizeof(char *));
+
     //allocate tokens
     int currToken = 0;
     wordSize = 0;
@@ -36,17 +36,19 @@ char** mytoc(char *str, char delim){
       }
     }
     if(wordSize > 0){
-      tokens[currToken] = subset(str, i-wordSize, i); 
+      tokens[currToken] = subset(str, i-wordSize, i);
+      currToken++;
     }
+    tokens[currToken] = NULL;
   }
   return tokens;
 }
 
 void deleteTokens(char ** tokens){
   if(tokens){
-    int p;
-    for(p = 0; tokens[p]; p++){
-      free(tokens[p]);
+    while(*tokens != NULL){
+      free(*tokens);
+      tokens++;
     }
     free(tokens);
   }
@@ -69,12 +71,11 @@ char * subset(char * str, int start, int end){
   }
 }
 
-void printTokens( char ** tokens){
+void printTokens(char ** tokens){
   if(tokens){
-    int p;
-    for(p = 0; tokens[p]; p++){
-      printf(tokens[p]);
-      printf("\n");
+    while(*tokens != NULL){
+      printf("%s\n", *tokens);
+      tokens++;
     }
   }
 }
