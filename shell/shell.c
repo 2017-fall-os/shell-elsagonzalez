@@ -50,21 +50,27 @@ int main(int argc, char *argv[], char *envp[]){
 	}
 	else { //not cd
 	  tokens = mytoc(answer, '|');
-	  for(i = 0; tokens[i] && tokens[i] != '\0'; i++){
-	    //count
+	  printTokens(tokens);
+	  printf("printing not failing\n");
+	  for(i = 0; tokens[i] && tokens[i] != '\n' && tokens[i] != '\0'; i++){
+	    //count commands
 	  }
+	  printf("num of commands is %d\n", i);
 	  char readingFromPipe = 0;
-	  int * pipeFileDes1; //for input
-	  int * pipeFileDes2; //for output
+	  int * pipeFileDes1 = 0; //for input
+	  int * pipeFileDes2 = 0; //for output
+	  int stdin_copy = 0;
+	  int stdout_copy = 0;
+	  int ret;
 	  for(i; i != 0; i--){
 	    if(readingFromPipe || i > 1){
-	      int stdin_copy = dup(0);
-	      int stdout_copy = dup(1);
+	      stdin_copy = dup(0);
+	      stdout_copy = dup(1);
 	    }
 	    if(i > 1){
 	      //pipe
 	      pipeFileDes2 = (int *) calloc(2, sizeof(int));
-	      pipe(pipeFileDes2);
+	      ret = pipe(pipeFileDes2);
 	    }
 	    char pathFound = 0;
 	    char ** command = mytoc(tokens[i-1], ' ');
@@ -96,39 +102,40 @@ int main(int argc, char *argv[], char *envp[]){
 	      else if(rc == 0){ //child
 		if(readingFromPipe){
 		  close(0);
-		  dup(pipeFileDes1[0]);
+		  ret = dup(pipeFileDes1[0]);
 		}
 		if(i > 1){
 		  close(1);
-		  dup(pipeFileDes2[0]);
+		  ret = dup(pipeFileDes2[0]);
 		  readingFromPipe = 1;
 		}
-		int returnVal = execve(command[0], command, envp); 
+		int returnVal = execve(command[0], command, envp);
+		//exit(2);
 	      }
 	      else {
 		int wc = wait(NULL); //parent
 	      }
+	      if(readingFromPipe || i > 1){
+		close(pipeFileDes1[0]);
+		close(pipeFileDes1[1]);
+		free(pipeFileDes1);
+		//return input and output to their original state
+		dup2(stdin_copy, 0);
+		dup2(stdout_copy, 1);
+		close(stdin_copy);
+		close(stdout_copy);
+	      }
+	      if(i > 1){
+		//swap pipes
+		pipeFileDes1 = pipeFileDes2;
+	      }
 	    }
 	    else {
 	      printf("Command not found\n");
+	      break;
 	    }//end if path found
-	    if(readingFromFile || i > 1){
-	      free(pipeDesFile1);
-	      //return input and output to their original state
-	      dup2(stdin_copy, 0);
-	      dup2(stdout_copy, 1);
-	      close(stdin_copy);
-	      close(stdout_copy);
-	    if(i > 1){
-	      //swap pipes
-	      pipeFileDes1 = pipeFileDes2;
-	      close(pipeFileDes[0], pipeFileDes[1]);
-	      //exit(2);
-	    }
-	    else if(readingFromFile){
-	      (pipeFileDes1);
 	  }//end for loop
-	  deleteTokens(tokens);
+	  //deleteTokens(tokens);
 	}//end if cd
       } //end if exiting
     } //end if answer
