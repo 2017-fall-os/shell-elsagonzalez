@@ -11,11 +11,11 @@ int main(int argc, char *argv[], char *envp[]){
   char ** tokens;
   char * exitStr = "exit\n";
   char * cdStr = "cd ";
-  char * answer = (char *)malloc(100*sizeof(char));
+  char * answer = (char *)malloc(256*sizeof(char));
   char isExiting = 1;
   do{
     //printf("%c", '$');
-    char * j = fgets(answer, 512, stdin);
+    char * j = fgets(answer, 256, stdin);
     if(answer && *answer){
       //check if it is exit
       isExiting = 1;
@@ -50,12 +50,11 @@ int main(int argc, char *argv[], char *envp[]){
 	}
 	else { //not cd
 	  tokens = mytoc(answer, '|');
-	  printTokens(tokens);
-	  printf("printing not failing\n");
-	  for(i = 0; tokens[i] && tokens[i] != '\n' && tokens[i] != '\0'; i++){
+	  for(i = 0; tokens[i] && tokens[i] != NULL; i++){
 	    //count commands
 	  }
 	  printf("num of commands is %d\n", i);
+	  int curr = 0;
 	  char readingFromPipe = 0;
 	  int * pipeFileDes1 = 0; //for input
 	  int * pipeFileDes2 = 0; //for output
@@ -73,14 +72,14 @@ int main(int argc, char *argv[], char *envp[]){
 	      ret = pipe(pipeFileDes2);
 	    }
 	    char pathFound = 0;
-	    char ** command = mytoc(tokens[i-1], ' ');
+	    char ** command = mytoc(tokens[curr], ' ');
 	    if(includesPath(command[0]) == 0){
 	      //look for the path in $PATH
 	      char ** paths = mytoc(getenv("PATH"), ':');
 	      int k;
 	      for(k = 0; paths[k] && paths[k] != '\0'; k++){
 		char * file = concat(paths[k], command[0]);
-		printf("path is %s, and file is %s\n", paths[k], file);
+		//printf("path is %s, and file is %s\n", paths[k], file);
 		struct stat temp;
 		if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
 		  printf("Path was found\n");
@@ -94,51 +93,53 @@ int main(int argc, char *argv[], char *envp[]){
 	      pathFound = 1;
 	    }
 	    if(pathFound){
-	      printf("I will fork\n");
+	      //printf("I will fork\n");
 	      int rc = fork();
 	      if(rc < 0){
 		printf("Fork failed");
 	      }
 	      else if(rc == 0){ //child
 		if(readingFromPipe){
+		  printf("I am going to read\n");
 		  close(0);
 		  ret = dup(pipeFileDes1[0]);
 		}
 		if(i > 1){
+		  printf("I am going to write\n"); 
 		  close(1);
-		  ret = dup(pipeFileDes2[0]);
-		  readingFromPipe = 1;
+		  ret = dup(pipeFileDes2[1]);
 		}
 		int returnVal = execve(command[0], command, envp);
-		//exit(2);
+		exit(0);
 	      }
-	      else {
-		int wc = wait(NULL); //parent
+	      else { //parent
+		int wc = wait(NULL);
 	      }
 	      if(readingFromPipe || i > 1){
-		close(pipeFileDes1[0]);
-		close(pipeFileDes1[1]);
 		free(pipeFileDes1);
 		//return input and output to their original state
 		dup2(stdin_copy, 0);
-		dup2(stdout_copy, 1);
+		dup2(stdout_copy, 1); 
 		close(stdin_copy);
 		close(stdout_copy);
 	      }
 	      if(i > 1){
 		//swap pipes
 		pipeFileDes1 = pipeFileDes2;
+		readingFromPipe = 1;
 	      }
+	      curr++;
 	    }
 	    else {
 	      printf("Command not found\n");
 	      break;
 	    }//end if path found
 	  }//end for loop
-	  //deleteTokens(tokens);
+	  deleteTokens(tokens);
 	}//end if cd
       } //end if exiting
     } //end if answer
+    printf("I am here .-. \n");
   } while(isExiting == 0);
 }
 
