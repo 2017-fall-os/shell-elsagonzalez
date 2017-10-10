@@ -54,20 +54,21 @@ int main(int argc, char *argv[], char *envp[]){
 	    //count commands
 	  }
 	  printf("num of commands is %d\n", i);
+	  int commandsRemaining = i;
 	  int curr = 0;
-	  char readingFromPipe = 0;
+	  char firstCommand = 1; //only this one will not read from pipe
 	  int * pipeFileDes1 = 0; //for input
 	  int * pipeFileDes2 = 0; //for output
 	  int stdin_copy = 0;
 	  int stdout_copy = 0;
 	  int ret;
-	  for(i; i != 0; i--){
-	    if(readingFromPipe || i > 1){
-	      stdin_copy = dup(0);
-	      stdout_copy = dup(1);
+	  for(commandsRemaining; commandsRemaining != 0; commandsRemaining--){
+	    if(!firstCommand){ //will read from pipe
+	      stdin_copy = dup(0); //save stdin to recover it later
 	    }
-	    if(i > 1){
-	      //pipe
+	    if(commandsRemaining > 1){ //will write to pipe
+	      stdout_copy = dup(1); //save stdout to recover it later
+	      //create pipe
 	      pipeFileDes2 = (int *) calloc(2, sizeof(int));
 	      ret = pipe(pipeFileDes2);
 	    }
@@ -99,34 +100,55 @@ int main(int argc, char *argv[], char *envp[]){
 		printf("Fork failed");
 	      }
 	      else if(rc == 0){ //child
-		if(readingFromPipe){
+		if(!firstCommand){ //will read from pipe
 		  printf("I am going to read\n");
+		  //dup2(pipeFileDes1[0], 0);
 		  close(0);
 		  ret = dup(pipeFileDes1[0]);
+		  close(pipeFileDes1[0]);
+		  close(pipeFileDes1[1]);
 		}
-		if(i > 1){
-		  printf("I am going to write\n"); 
+		if(commandsRemaining > 1){ //not the last command, will write to pipe
+		  printf("I am going to write\n");
+		  //dup2(pipeFileDes2[1], 1);
 		  close(1);
 		  ret = dup(pipeFileDes2[1]);
+		  close(pipeFileDes2[0]);
+		  close(pipeFileDes2[1]);
 		}
 		int returnVal = execve(command[0], command, envp);
 		exit(0);
 	      }
 	      else { //parent
-		int wc = wait(NULL);
-	      }
-	      if(readingFromPipe || i > 1){
+		if(!firstCommand){
+		  close(pipeFileDes1[0]);
+		  close(pipeFileDes1[1]);
+		}
+		if(commandsRemaining > 1){
+		  close(pipeFileDes2[0]);
+		  close(pipeFileDes2[0]);
+		}
+		else { //last child running, wait for it
+		  //int wc = wait(NULL);
+		  int waitStat;
+		  ret = waitpid(rc, &waitStat, 0);
+		}
+	      } //end fortking
+	      if(!firstCommand){ //read from pipe
 		free(pipeFileDes1);
-		//return input and output to their original state
-		dup2(stdin_copy, 0);
-		dup2(stdout_copy, 1); 
+		//return input to its original state
+		dup2(stdin_copy, 0); 
 		close(stdin_copy);
-		close(stdout_copy);
 	      }
-	      if(i > 1){
+	      else{ //if it was the first command
+		firstCommand = 0;
+	      }
+	      if(commandsRemaining > 1){
 		//swap pipes
 		pipeFileDes1 = pipeFileDes2;
-		readingFromPipe = 1;
+		//return output to its original state
+		dup2(stdout_copy, 1);
+		close(stdout_copy);
 	      }
 	      curr++;
 	    }
