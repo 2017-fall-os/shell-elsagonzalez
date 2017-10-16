@@ -54,7 +54,6 @@ int main(int argc, char *argv[], char *envp[]){
 	  for(i = 0; tokens[i] && tokens[i] != NULL; i++){
 	    //count commands
 	  }
-	  printf("num of commands is %d\n", i);
 	  int commandsRemaining = i;
 	  int curr = 0;
 	  char firstCommand = 1; //only this one will not read from pipe
@@ -77,15 +76,12 @@ int main(int argc, char *argv[], char *envp[]){
 	    char ** command = mytoc(tokens[curr], ' ');
 	    command[0] = getPath(command[0]); 
 	    if(command[0] != NULL){
-	      //printf("I will fork\n");
 	      int rc = fork();
 	      if(rc < 0){
 		printf("Fork failed");
 	      }
 	      else if(rc == 0){ //child
 		if(!firstCommand){ //will read from pipe
-		  printf("I am going to read\n");
-		  //dup2(pipeFileDes1[0], 0);
 		  close(0);
 		  ret = dup(pipeFileDes1[0]);
 		  assert(ret > -1);
@@ -93,8 +89,6 @@ int main(int argc, char *argv[], char *envp[]){
 		  close(pipeFileDes1[1]);
 		}
 		if(commandsRemaining > 1){ //not the last command, will write to pipe
-		  printf("I am going to write\n");
-		  //dup2(pipeFileDes2[1], 1);
 		  close(1);
 		  ret = dup(pipeFileDes2[1]);
 		  assert(ret > -1);
@@ -109,12 +103,7 @@ int main(int argc, char *argv[], char *envp[]){
 		  close(pipeFileDes1[0]);
 		  close(pipeFileDes1[1]);
 		}
-		if(commandsRemaining > 1){
-		  close(pipeFileDes2[0]);
-		  close(pipeFileDes2[0]);
-		}
 		else { //last child running, wait for it
-		  //int wc = wait(NULL);
 		  int waitStat;
 		  ret = waitpid(rc, &waitStat, 0);
 		}
@@ -146,7 +135,6 @@ int main(int argc, char *argv[], char *envp[]){
 	}//end if cd
       } //end if exiting
     } //end if answer
-    printf("I am here .-. \n");
   } while(isExiting == 0);
 }
 
@@ -158,10 +146,8 @@ char * getPath(char * command){
     int k;
     for(k = 0; paths[k] && paths[k] != '\0'; k++){
       char * file = concat(paths[k], command);
-      //printf("path is %s, and file is %s\n", paths[k], file);
       struct stat temp;
       if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
-	printf("Path was found\n");
 	return file;
       }
     }
