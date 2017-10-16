@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -71,29 +72,11 @@ int main(int argc, char *argv[], char *envp[]){
 	      //create pipe
 	      pipeFileDes2 = (int *) calloc(2, sizeof(int));
 	      ret = pipe(pipeFileDes2);
+	      assert(ret == 0);
 	    }
-	    char pathFound = 0;
 	    char ** command = mytoc(tokens[curr], ' ');
-	    if(includesPath(command[0]) == 0){
-	      //look for the path in $PATH
-	      char ** paths = mytoc(getenv("PATH"), ':');
-	      int k;
-	      for(k = 0; paths[k] && paths[k] != '\0'; k++){
-		char * file = concat(paths[k], command[0]);
-		//printf("path is %s, and file is %s\n", paths[k], file);
-		struct stat temp;
-		if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
-		  printf("Path was found\n");
-		  command[0] = file;
-		  pathFound = 1;
-		  break;
-		}
-	      }
-	    }
-	    else {
-	      pathFound = 1;
-	    }
-	    if(pathFound){
+	    command[0] = getPath(command[0]); 
+	    if(command[0] != NULL){
 	      //printf("I will fork\n");
 	      int rc = fork();
 	      if(rc < 0){
@@ -105,6 +88,7 @@ int main(int argc, char *argv[], char *envp[]){
 		  //dup2(pipeFileDes1[0], 0);
 		  close(0);
 		  ret = dup(pipeFileDes1[0]);
+		  assert(ret > -1);
 		  close(pipeFileDes1[0]);
 		  close(pipeFileDes1[1]);
 		}
@@ -113,6 +97,7 @@ int main(int argc, char *argv[], char *envp[]){
 		  //dup2(pipeFileDes2[1], 1);
 		  close(1);
 		  ret = dup(pipeFileDes2[1]);
+		  assert(ret > -1);
 		  close(pipeFileDes2[0]);
 		  close(pipeFileDes2[1]);
 		}
@@ -157,12 +142,34 @@ int main(int argc, char *argv[], char *envp[]){
 	      break;
 	    }//end if path found
 	  }//end for loop
-	  deleteTokens(tokens);
+	  //deleteTokens(tokens);
 	}//end if cd
       } //end if exiting
     } //end if answer
     printf("I am here .-. \n");
   } while(isExiting == 0);
+}
+
+char * getPath(char * command){
+  char pathFound = 0;
+  if(includesPath(command) == 0){
+    //look for the path in $PATH
+    char ** paths = mytoc(getenv("PATH"), ':');
+    int k;
+    for(k = 0; paths[k] && paths[k] != '\0'; k++){
+      char * file = concat(paths[k], command);
+      //printf("path is %s, and file is %s\n", paths[k], file);
+      struct stat temp;
+      if(stat(file, &temp) == 0 && temp.st_mode & S_IXUSR){
+	printf("Path was found\n");
+	return file;
+      }
+    }
+  }
+  else {
+    return command;
+  }
+  return NULL;
 }
 
 char includesPath(char * token){
