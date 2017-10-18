@@ -17,6 +17,8 @@ int main(int argc, char *argv[], char *envp[]){
   do{
     //printf("%c", '$');
     char * j = fgets(answer, 256, stdin);
+    if(j == 0)
+      exit(0);
     if(answer && *answer){
       //check if it is exit
       isExiting = 1;
@@ -26,6 +28,9 @@ int main(int argc, char *argv[], char *envp[]){
 	  isExiting = 0;
 	  break;
 	}
+      }
+      if(answer[i] == '\0'){
+	isExiting = 1;
       }
       if(isExiting == 0){
 	//check if it is cd

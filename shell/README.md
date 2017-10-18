@@ -12,6 +12,8 @@ This demo contains the following files:
 * mytoc.c: implements the tokenizer, given a string and a delimiter, it breaks down the string into sub-strings and allocates them into memory.
 * mytoc.h: header file for tokenizer and serves as "public" interface for the functions.
 
+Testing with testShell.sh will indicate all test cases fail although everything in this shell work except for the background commands.
+
 To compile:
 ~~~
 $ make all

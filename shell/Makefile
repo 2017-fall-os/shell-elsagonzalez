@@ -16,6 +16,3 @@ shell.o: shell.c mytoc.h shell.h
 
 clean: 
 	rm -f *.o shell
-
-demo: shell
-	(echo first; echo "second line"; echo "third and last") | ./shell
